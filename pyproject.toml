@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pytest-diff-selector"
-version = "0.1.1"
+version = "0"
 description = "Get tests affected by code changes (using git)"
 authors = ["Israel Fruchter <israel.fruchter@gmail.com>"]
 license = "MIT"
@@ -37,3 +37,6 @@ pytest-diff-selector = "pytest_diff_selector.plugin"
 [build-system]
 requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry-version-plugin]
+source = "git-tag"
