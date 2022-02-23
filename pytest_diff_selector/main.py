@@ -22,6 +22,28 @@ class CollectionVisitor(CallGraphVisitor):
         self.defines_edges = defaultdict(list)
         super().process()
 
+    def visit_FunctionDef(self, node):
+        super().visit_FunctionDef(node)
+
+        # look decorator mark them as a user of current function/method
+        for n in node.decorator_list:
+            self.visit(n)
+            from_node = self.get_node(
+                namespace=self.get_node_of_current_namespace().get_name(),
+                ast_node=node,
+                name=node.name,
+            )
+            ns = from_node.get_name()
+            to_node = self.get_node(
+                namespace=ns,
+                name=self.last_value.name,
+                ast_node=self.last_value.ast_node,
+                flavor=Flavor.ATTRIBUTE,
+            )
+            self.add_uses_edge(from_node, to_node)
+            print(from_node, to_node)
+            self.last_value = None
+
     def process_one(self, filename):
         if self.progress_bar and self.progress_bar.disable:
             print(f"scanning: {filename}")
@@ -119,6 +141,9 @@ class AffectedTestScanner:
                     self.scanned_nodes.append(node)
                     if self.scan_nodes(self.graph.nodes[node.name]):
                         return True  # no point of continue if the test is already marked as affected
+            elif node.flavor == Flavor.ATTRIBUTE:  # decorators or global variables
+                if self.check_node_affected(node):
+                    return True  # no point of continue if the test is already marked as affected
             else:
                 continue
         return False

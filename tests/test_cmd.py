@@ -43,16 +43,16 @@ def test_repo(session_git_repo) -> GitRepo:
         "test_a.py",
         """
         from helpers import call_something
-        
+
         class TestSomething:
             def test_method():
                 global_var = global_var + 1
                 call_something()
                 assert 0/1
-                
+
         def test_func1():
             call_something()
-            
+
             assert False
     """,
     )
@@ -70,8 +70,8 @@ def test_simple_scan(test_repo):
     append_file(
         test_repo,
         "test_a.py",
-        """  
-        # comment 
+        """
+        # comment
         def test_func2():
             assert True
     """,
@@ -85,14 +85,14 @@ def test_find_change_in_test_function(test_repo):
     write_file(
         test_repo,
         "test_a.py",
-        """  
+        """
         def test_func1():
             call_something()
             call_something_else()
-            
+
             assert True
-            
-        # comment 
+
+        # comment
         def test_func2():
             assert True
     """,
@@ -107,16 +107,16 @@ def test_find_change_in_test_method(test_repo):
     write_file(
         test_repo,
         "test_a.py",
-        """  
+        """
         class TestSomething:
             def test_method():
                 call_something()
                 call_something_else()
                 assert 0/1
-                
+
         def test_func1():
             call_something()
-            
+
             assert False
     """,
     )
@@ -165,9 +165,9 @@ def test_find_change_in_test_module_scope(test_repo):
     write_file(
         test_repo,
         "test_a.py",
-        """  
+        """
         global_var = 20
-        
+
         class TestSomething:
             def test_method():
                 global_var = global_var + 1
@@ -181,6 +181,33 @@ def test_find_change_in_test_module_scope(test_repo):
     """,
     )
     ret = test_repo.run(f"python {selector} HEAD", capture=True, shell=True)
-    print(ret)
+
+    assert "Analyzing: 100%" in ret
+    assert "test_a.py::TestSomething::test_method" in ret
+
+
+def test_find_change_in_method_decorator(test_repo):
+    write_file(
+        test_repo,
+        "test_a.py",
+        """
+        from helpers import call_something
+        import pytest
+
+        class TestSomething:
+            @pytest.mark.skip
+            def test_method():
+                global_var = global_var + 1
+                call_something()
+                assert 0/1
+
+        def test_func1():
+            call_something()
+
+            assert False
+    """,
+    )
+    ret = test_repo.run(f"python {selector} HEAD", capture=True, shell=True)
+
     assert "Analyzing: 100%" in ret
     assert "test_a.py::TestSomething::test_method" in ret
