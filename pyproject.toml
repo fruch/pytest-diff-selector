@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pytest-diff-selector"
-version = "0.1.0"
-description = ""
+version = "0.1.1"
+description = "Get tests affected by code changes (using git)"
 authors = ["Israel Fruchter <israel.fruchter@gmail.com>"]
 license = "MIT"
 readme = "README.md"

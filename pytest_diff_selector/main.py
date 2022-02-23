@@ -41,7 +41,6 @@ class CollectionVisitor(CallGraphVisitor):
                 flavor=Flavor.ATTRIBUTE,
             )
             self.add_uses_edge(from_node, to_node)
-            print(from_node, to_node)
             self.last_value = None
 
     def process_one(self, filename):
@@ -49,7 +48,7 @@ class CollectionVisitor(CallGraphVisitor):
             print(f"scanning: {filename}")
         super().process_one(filename)
         if self.progress_bar:
-            self.progress_bar.set_postfix_str(filename)
+            self.progress_bar.set_postfix_str(Path(filename).relative_to(self.root))
             self.progress_bar.update()
 
     def postprocess(self):
