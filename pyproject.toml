@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "pytest-diff-selector"
+version = "0.1.0"
+description = ""
+authors = ["Israel Fruchter <israel.fruchter@gmail.com>"]
+packages = [
+    { include = "pytest_diff_selector" },
+]
+
+[tool.poetry.scripts]
+selector = 'pytest_diff_selector.main:run'
+
+[tool.poetry.dependencies]
+python = "^3.10"
+unidiff = "^0.7.3"
+pyan3 = "^1.2.0"
+tqdm = "^4.62.3"
+rich = "^11.2.0"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.plugins.pytest11]
+pytest-diff-selector = "pytest_diff_selector.plugin"
+
+[build-system]
+requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
+build-backend = "poetry.core.masonry.api"
