@@ -157,7 +157,25 @@ class AffectedTestScanner:
         return False
 
 
-def run():
+def run(root_path: str, git_diff: str):
+    root_path = Path(os.path.abspath(root_path))
+    changed_lines_set = get_diff(root_path, git_diff)
+    files_changed = list(str(root_path / f) for f in changed_lines_set.keys())
+    files_changed = [f for f in files_changed if f.endswith(".py")]
+    if not files_changed:
+        print("No python file in the change/diff")
+        return []
+
+    files = list(str(f) for f in root_path.glob("**/*.py"))
+    graph = CollectionVisitor(files, str(root_path), logger=logging)
+
+    scanner = AffectedTestScanner(graph, changed_lines_set, root_path)
+    tests = scanner.collect_tests()
+
+    return tests
+
+
+def main():
     logging.basicConfig(level=logging.WARNING)
 
     parser = argparse.ArgumentParser(description="Select tests based on git diff")
@@ -169,18 +187,7 @@ def run():
     )
 
     args = parser.parse_args()
-    root_path = Path(os.path.abspath(args.root_path))
-    changed_lines_set = get_diff(root_path, args.git_diff)
-    files_changed = list(str(root_path / f) for f in changed_lines_set.keys())
-    files_changed = [f for f in files_changed if f.endswith(".py")]
-    if not files_changed:
-        print("No python file in the change/diff")
-        sys.exit()
-    files = list(str(f) for f in root_path.glob("**/*.py"))
-    graph = CollectionVisitor(files, str(root_path), logger=logging)
-
-    scanner = AffectedTestScanner(graph, changed_lines_set, root_path)
-    tests = scanner.collect_tests()
+    tests = run(**args.__dict__)
     for test in tests:
         print(test)
 
@@ -188,4 +195,4 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    main()
