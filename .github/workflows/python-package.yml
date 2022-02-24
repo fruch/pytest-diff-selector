@@ -33,4 +33,4 @@ jobs:
         pre-commit run -a --show-diff-on-failure
     - name: Test with pytest
       run: |
-        pytest -vvv
+        pytest -vvv --cov --cov-fail-under=99

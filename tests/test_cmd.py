@@ -1,3 +1,5 @@
+import pytest
+
 from pytest_diff_selector.main import run
 
 from conftest import append_file, write_file
@@ -66,7 +68,7 @@ def test_find_change_not_in_test_file(test_repo):
         "helper.py",
         """
         def call_something():
-            print('doing')
+            print('doing some changes')
     """,
     )
     test_repo.run("git add *.py")
@@ -141,4 +143,54 @@ def test_find_change_in_method_decorator(test_repo):
     )
     ret = run(git_diff="HEAD", root_path=test_repo.workspace)
 
+    assert "test_a.py::TestSomething::test_method" in ret
+
+
+def test_find_change_with_no_python_file(test_repo):
+    write_file(
+        test_repo,
+        "README.md",
+        """
+        # Just updating the docs
+    """,
+    )
+    ret = run(git_diff="HEAD", root_path=test_repo.workspace)
+
+    assert ret == []
+
+
+def test_find_change_nested_calls(test_repo):
+    write_file(
+        test_repo,
+        "helpers.py",
+        """
+        def call_something():
+            print('doing')
+            func1()
+
+        def func1():
+            print('doing B')
+    """,
+    )
+    ret = run(git_diff="HEAD", root_path=test_repo.workspace)
+
+    assert ret == []
+
+
+@pytest.mark.skip(
+    reason="Not sure there's a way to detect this one, not without scanning before change took place"
+)
+def test_find_change_removal_from_end_of_func(test_repo):  # pragma: no cover
+    write_file(
+        test_repo,
+        "helper.py",
+        """
+        def call_something():
+            print('doing')
+    """,
+    )
+    test_repo.run("git add *.py")
+    ret = run(git_diff="HEAD", root_path=test_repo.workspace)
+
+    assert "test_a.py::test_func1" in ret
     assert "test_a.py::TestSomething::test_method" in ret

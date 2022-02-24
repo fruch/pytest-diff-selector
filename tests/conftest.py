@@ -39,7 +39,7 @@ def test_repo(session_git_repo) -> GitRepo:
         session_git_repo,
         "test_a.py",
         """
-        from helpers import call_something
+        from helper import call_something
 
         class TestSomething:
             def test_method():
@@ -51,6 +51,18 @@ def test_repo(session_git_repo) -> GitRepo:
             call_something()
 
             assert False
+    """,
+    )
+    write_file(
+        session_git_repo,
+        "helper.py",
+        """
+        def call_something():
+            print('doing')
+            func1()
+
+        def func1():
+            print('doing A')
     """,
     )
     session_git_repo.run("git add *.py")
