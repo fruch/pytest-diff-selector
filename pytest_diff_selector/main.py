@@ -45,7 +45,7 @@ class CollectionVisitor(CallGraphVisitor):
 
     def process_one(self, filename):
         if self.progress_bar and self.progress_bar.disable:
-            print(f"scanning: {filename}")
+            print(f"scanning: {filename}")  # pragma: no cover
         super().process_one(filename)
         if self.progress_bar:
             self.progress_bar.set_postfix_str(Path(filename).relative_to(self.root))
@@ -133,7 +133,9 @@ class AffectedTestScanner:
                 if node not in self.scanned_nodes:
                     self.scanned_nodes.append(node)
                     if node in self.graph.uses_edges:
-                        if self.scan_nodes(self.graph.uses_edges[node]):
+                        if self.scan_nodes(
+                            self.graph.uses_edges[node]
+                        ):  # pragma: no cover
                             return True  # no point of continue if the test is already marked as affected
             elif node.flavor == Flavor.IMPORTEDITEM:
                 if node not in self.scanned_nodes:
