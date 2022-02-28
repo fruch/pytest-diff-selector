@@ -79,6 +79,24 @@ def test_find_change_not_in_test_file(test_repo):
 
 
 def test_find_change_not_in_test_file_nested(test_repo):
+    write_file(
+        test_repo,
+        "test_a.py",
+        """
+        from utils.helper import call_something
+
+        class TestSomething:
+            def test_method():
+                global_var = global_var + 1
+                call_something()
+                assert 0/1
+
+        def test_func1():
+            call_something()
+
+            assert False
+    """,
+    )
     write_file(test_repo, "utils/__init__.py", """# just comment""")
     write_file(
         test_repo,

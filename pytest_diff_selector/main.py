@@ -140,7 +140,23 @@ class AffectedTestScanner:
             elif node.flavor == Flavor.IMPORTEDITEM:
                 if node not in self.scanned_nodes:
                     self.scanned_nodes.append(node)
-                    if self.scan_nodes(self.graph.nodes[node.name]):
+                    # since function name can be identical across module/classes, we need to
+                    # cross check namespace and filename are matching
+                    if self.scan_nodes(
+                        [
+                            n
+                            for n in self.graph.nodes[node.name]
+                            if node.filename == n.filename
+                            and n.flavor
+                            in [
+                                Flavor.METHOD,
+                                Flavor.CLASSMETHOD,
+                                Flavor.STATICMETHOD,
+                                Flavor.FUNCTION,
+                            ]
+                            and node.namespace in n.namespace
+                        ]
+                    ):
                         return True  # no point of continue if the test is already marked as affected
             elif node.flavor == Flavor.ATTRIBUTE:  # decorators or global variables
                 if self.check_node_affected(node):
