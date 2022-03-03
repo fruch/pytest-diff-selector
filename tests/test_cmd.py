@@ -17,7 +17,7 @@ def test_simple_scan(test_repo):
     )
     ret = run(git_diff="HEAD", root_path=test_repo.workspace)
 
-    assert ret == []
+    assert ret == set()
 
 
 def test_find_change_in_test_function(test_repo):
@@ -194,7 +194,7 @@ def test_find_change_nested_calls(test_repo):
 
     ret = run(git_diff="HEAD", root_path=test_repo.workspace)
 
-    assert ret == []
+    assert ret == set()
 
 
 @pytest.mark.skip(
@@ -242,7 +242,7 @@ def test_find_change_in_inherited_class(test_repo):
     )
     ret = run(git_diff="HEAD", root_path=test_repo.workspace)
 
-    assert ["test_a.py::TestSomething::test_method"] == ret
+    assert {"test_a.py::TestSomething::test_method"} == ret
 
 
 def test_find_change_in_new_file(test_repo):
@@ -259,4 +259,44 @@ def test_find_change_in_new_file(test_repo):
 
     ret = run(git_diff="HEAD", root_path=test_repo.workspace)
 
-    assert ["test_b.py::test_func1"] == ret
+    assert {"test_b.py::test_func1"} == ret
+
+
+def test_find_change_in_inherited_class_tests(test_repo):
+    """
+    * test the removal of test methods from class with __test__=False
+    * test the copy of test methods based on inheritance
+    """
+    write_file(
+        test_repo,
+        "test_a.py",
+        """
+        from helpers import call_something
+
+        class FatherClass:
+            __test__ = False
+            def father_method(self):
+                call_something()
+            def test_method_C(self):
+                do_something_important()
+                pass
+
+        class TestSomething(FatherClass):
+            def test_method(self):
+                global_var = global_var + 1
+                call_something()
+                self.father_method()
+                assert 0/1
+
+        def test_func1():
+            call_something()
+
+            assert False
+    """,
+    )
+    ret = run(git_diff="HEAD", root_path=test_repo.workspace)
+
+    assert {
+        "test_a.py::TestSomething::test_method_C",
+        "test_a.py::TestSomething::test_method",
+    } == ret

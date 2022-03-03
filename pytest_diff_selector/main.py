@@ -6,6 +6,7 @@ from subprocess import check_output
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict
+import copy
 
 from unidiff import PatchSet, PatchedFile, Hunk, LINE_TYPE_ADDED, LINE_TYPE_REMOVED
 from pyan.analyzer import CallGraphVisitor, Flavor
@@ -97,15 +98,21 @@ class AffectedTestScanner:
         self.test_set = set()
         self.root_path = root_path
 
-    def collect_tests(self) -> list:
+    def collect_tests(self) -> set:
+        for key, nodes in self.graph.nodes.items():
+            if key.startswith("test_"):
+                self.copy_test_method_if_needed(nodes)
+
         for key_node, nodes in self.graph.uses_edges.items():
             if key_node.name.startswith("test_"):
+                if self.check_if_test_disabled_in_scope(key_node):
+                    continue
                 self.current_test = key_node
                 self.check_node_affected(key_node)
                 self.scan_nodes(nodes)
                 self.scanned_nodes.clear()
 
-        tests = []
+        tests = set()
         for test in self.test_set:
             relative_filename = Path(test.filename).relative_to(self.root_path)
             namespace = []
@@ -116,7 +123,7 @@ class AffectedTestScanner:
             namespace = "::".join(reversed(namespace))
             namespace = f"::{namespace}" if namespace else ""
             test_full_name = f"{relative_filename}{namespace}::{test.name}"
-            tests.append(test_full_name)
+            tests.add(test_full_name)
 
         return tests
 
@@ -173,6 +180,27 @@ class AffectedTestScanner:
                     self.test_set.add(self.current_test)
                     return True
         return False
+
+    def check_if_test_disabled_in_scope(self, test_node):
+        if scope := self.graph.scopes.get(test_node.namespace):
+            if test_dunder := scope.defs.get("__test__"):
+                return not test_dunder.ast_node.value
+        return False
+
+    def copy_test_method_if_needed(self, nodes):
+        # go over test methods and lookup in the mro
+        # if theres any class inheriting from the class of this method
+        # and create a copy of it's usage to the inherited class
+        for node in nodes:
+            for klass, parents in self.graph.mro.items():
+                for p in parents[1:]:
+                    if node.namespace == f"{p.namespace}.{p.name}":
+                        new_node = copy.deepcopy(node)
+                        new_node.namespace = f"{klass.namespace}.{klass.name}"
+                        new_node.filename = klass.filename
+                        self.graph.uses_edges[new_node] = self.graph.uses_edges.get(
+                            node, []
+                        )
 
 
 def run(root_path: str, git_diff: str):
