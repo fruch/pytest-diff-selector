@@ -41,10 +41,15 @@ def test_repo(session_git_repo) -> GitRepo:
         """
         from helper import call_something
 
-        class TestSomething:
-            def test_method():
+        class FatherClass:
+            def father_method(self):
+                pass
+
+        class TestSomething(FatherClass):
+            def test_method(self):
                 global_var = global_var + 1
                 call_something()
+                self.father_method()
                 assert 0/1
 
         def test_func1():

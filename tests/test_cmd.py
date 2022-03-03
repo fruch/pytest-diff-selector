@@ -190,6 +190,8 @@ def test_find_change_nested_calls(test_repo):
             print('doing B')
     """,
     )
+    test_repo.run("git add *.py")
+
     ret = run(git_diff="HEAD", root_path=test_repo.workspace)
 
     assert ret == []
@@ -212,3 +214,49 @@ def test_find_change_removal_from_end_of_func(test_repo):  # pragma: no cover
 
     assert "test_a.py::test_func1" in ret
     assert "test_a.py::TestSomething::test_method" in ret
+
+
+def test_find_change_in_inherited_class(test_repo):
+    write_file(
+        test_repo,
+        "test_a.py",
+        """
+        from helpers import call_something
+
+        class FatherClass:
+            def father_method(self):
+                call_something()
+
+        class TestSomething(FatherClass):
+            def test_method(self):
+                global_var = global_var + 1
+                call_something()
+                self.father_method()
+                assert 0/1
+
+        def test_func1():
+            call_something()
+
+            assert False
+    """,
+    )
+    ret = run(git_diff="HEAD", root_path=test_repo.workspace)
+
+    assert ["test_a.py::TestSomething::test_method"] == ret
+
+
+def test_find_change_in_new_file(test_repo):
+    write_file(
+        test_repo,
+        "test_b.py",
+        """
+        def test_func1():
+            call_something()
+            assert False
+    """,
+    )
+    test_repo.run("git add *.py")
+
+    ret = run(git_diff="HEAD", root_path=test_repo.workspace)
+
+    assert ["test_b.py::test_func1"] == ret
