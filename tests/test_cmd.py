@@ -300,3 +300,22 @@ def test_find_change_in_inherited_class_tests(test_repo):
         "test_a.py::TestSomething::test_method_C",
         "test_a.py::TestSomething::test_method",
     } == ret
+
+
+def test_usage_of_list_comprehension(test_repo):
+    write_file(
+        test_repo,
+        "test_b.py",
+        """
+        def test_func1():
+            l = [ i for i in range(10) ]
+            s = { i for i in range(10) }
+            call_something()
+            assert False
+    """,
+    )
+    test_repo.run("git add *.py")
+
+    ret = run(git_diff="HEAD", root_path=test_repo.workspace)
+
+    assert {"test_b.py::test_func1"} == ret

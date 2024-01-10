@@ -23,6 +23,14 @@ class CollectionVisitor(CallGraphVisitor):
         self.defines_edges = defaultdict(list)
         super().process()
 
+    def analyze_comprehension(self, *args, **kwargs):
+        # since https://peps.python.org/pep-0709/ introduce in python 3.12
+        # we don't comprehension in scope, so we can ignore this logic
+        # locals of comprehension would be available on the parent scope
+        # and that should be sufficient of this code usage
+        if sys.version_info < (3, 12):
+            super().analyze_comprehension(*args, **kwargs)
+
     def visit_FunctionDef(self, node):
         super().visit_FunctionDef(node)
 
