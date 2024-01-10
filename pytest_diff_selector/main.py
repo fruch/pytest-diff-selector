@@ -85,9 +85,15 @@ def get_diff(git_repo_directory, git_selection) -> Dict[str, set]:
         for hunk in f:
             hunk: Hunk
             removed = {
-                l.source_line_no for l in hunk if l.line_type == LINE_TYPE_REMOVED
+                line.source_line_no
+                for line in hunk
+                if line.line_type == LINE_TYPE_REMOVED
             }
-            added = {l.target_line_no for l in hunk if l.line_type == LINE_TYPE_ADDED}
+            added = {
+                line.target_line_no
+                for line in hunk
+                if line.line_type == LINE_TYPE_ADDED
+            }
             changed_lines[f.path] = changed_lines[f.path].union(removed, added)
 
     return changed_lines
